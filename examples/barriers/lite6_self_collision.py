@@ -3,8 +3,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2024 Ivan Domrachev, Simeon Nedelchev
+#
+# Robert Twomey | 2025 | rtwomey@ucsd.edu | cohab-lab.net
 
-"""Universal Robots XARM7 arm tracking a moving target."""
+"""Universal Robots lite6 arm tracking a moving target with self collision barriers."""
 
 import argparse
 
@@ -69,7 +71,7 @@ if __name__ == "__main__":
 
     end_effector_task = FrameTask(
         "link_eef",
-        position_cost=10.0,  # [cost] / [m]
+        position_cost=30.0, #10.0,  # [cost] / [m]
         orientation_cost=1.0,  # [cost] / [rad]
     )
 
@@ -77,15 +79,17 @@ if __name__ == "__main__":
         cost=1e-3,  # [cost] / [rad]
     )
 
+    # starting point (joint angles)
     q_ref = np.array(
-        [
-            1.27153374,
-            -0.87988708,
-            1.89104795,
-            1.73996951,
-            -0.24610945,
-            -0.74979019,
-        ]
+        # [
+        #     1.27153374,
+        #     -0.87988708,
+        #     1.89104795,
+        #     1.73996951,
+        #     -0.24610945,
+        #     -0.74979019,
+        # ]
+        [ 0, 0, 0, 0, 0, 0 ]
     )
 
     # pos_barrier = PositionBarrier(
@@ -115,7 +119,6 @@ if __name__ == "__main__":
 
     # robot.data = pin.Data(robot.model)
 
-
     # # Pink barriers
     # ee_barrier = BodySphericalBarrier(
     #     ("lite6_ee_barrier"),
@@ -131,6 +134,7 @@ if __name__ == "__main__":
         "lite6.srdf",
     )
     print(srdf_path)
+
     # Collisions: processing collisions from urdf (include all) and srdf (exclude specified)
     # and updating collision model and creating corresponding collision data
     robot.collision_data = process_collision_pairs(robot.model, robot.collision_model, srdf_path)
@@ -142,12 +146,13 @@ if __name__ == "__main__":
         collision_model=robot.collision_model,  # Collision model is required for self_collision_barrier
         collision_data=robot.collision_data,
     )
-    print(robot.collision_model.collisionPairs)
+    # print(robot.collision_model.collisionPairs)
+
     collision_barrier = SelfCollisionBarrier(
         n_collision_pairs=len(robot.collision_model.collisionPairs),
         gain=20.0,
         safe_displacement_gain=1.0,
-        d_min=0.05,
+        d_min=0.01,
     )
     barriers = [collision_barrier]
 
@@ -179,9 +184,13 @@ if __name__ == "__main__":
         # end_effector_target.translation[1] = 0.5 * np.sin(t/4)
         # end_effector_target.translation[2] = 0.5 + 0.2 * np.sin(t/8)
         
-        x = 0.3
-        y = 0.5 * np.sin(t / 4)
-        z = 0.5 + 0.2 * np.sin(t / 8)
+        mu = 0.5
+        x = 0.5 * np.cos(t*mu) #0.4
+        y = 0.5 * np.sin((t*mu))
+        z = 0.5+0.3 * np.cos((t*mu))
+        # z = 0.5 + 0.2 * np.sin(t)
+        # y = 0.5 * np.sin(t / 4)
+        # z = 0.5 + 0.2 * np.sin(t / 8)
 
         # Set position
         end_effector_target.translation[0] = x
@@ -225,21 +234,21 @@ if __name__ == "__main__":
         )
         configuration.integrate_inplace(velocity, dt)
 
-        G, h = collision_barrier.compute_qp_inequalities(configuration, dt=dt)
-        # G, h = pos_barrier.compute_qp_inequalities(configuration, dt=dt)
-        distance_to_manipulator = configuration.get_transform_frame_to_world(
-            "link_eef"
-        ).translation[1]
-        if args.verbose:
-            print(
-                f"Task error: {end_effector_task.compute_error(configuration)}"
-            )
-            print(
-                "Position CBF value: "
-                f"{pos_barrier.compute_barrier(configuration)[0]:0.3f} >= 0"
-            )
-            print(f"Distance to manipulator: {distance_to_manipulator} <= 0.6")
-            print("-" * 60)
+        # G, h = collision_barrier.compute_qp_inequalities(configuration, dt=dt)
+        # # G, h = pos_barrier.compute_qp_inequalities(configuration, dt=dt)
+        # distance_to_manipulator = configuration.get_transform_frame_to_world(
+        #     "link_eef"
+        # ).translation[1]
+        # if args.verbose:
+        #     print(
+        #         f"Task error: {end_effector_task.compute_error(configuration)}"
+        #     )
+        #     print(
+        #         "Position CBF value: "
+        #         f"{pos_barrier.compute_barrier(configuration)[0]:0.3f} >= 0"
+        #     )
+        #     print(f"Distance to manipulator: {distance_to_manipulator} <= 0.6")
+        #     print("-" * 60)
 
         # Visualize result at fixed FPS
         viz.display(configuration.q)

@@ -168,6 +168,8 @@ if __name__ == "__main__":
     t = 0.0  # [s]
     l_y_des = np.array([0.392, -0.392, 0.6])
     r_y_des = np.array([0.392, 0.392, 0.6])
+    # l_y_des = np.array([-0.2, -0.392, 0.6])
+    # r_y_des = np.array([-0.2, 0.392, 0.6])
 
     A = l_y_des.copy()
     B = r_y_des.copy()
