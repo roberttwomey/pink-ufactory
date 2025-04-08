@@ -7,6 +7,7 @@ import numpy as np
 import time
 import socket
 import sys
+import json  # Add this import for JSON serialization
 
 bSocket = True
 
@@ -51,7 +52,8 @@ try:
 
 		start = time.time()
 
-		image = cv2.cvtColor(cv2.flip(image, -1), cv2.COLOR_BGR2RGB)
+		# image = cv2.cvtColor(cv2.flip(image, -1), cv2.COLOR_BGR2RGB)
+		image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
 		# razer kyo pro
 		# image = cv2.cvtColor(cv2.flip(image, 1), cv2.COLOR_BGR2RGB)
@@ -177,11 +179,22 @@ try:
 			if bSocket:
 				try:
 					count += 1
+					# Prepare data as a dictionary
+					sendData = {
+						"x_rot": x_rot,
+						"y_rot": y_rot,
+						"z_rot": z_rot,
+						"xdiff": xdiff,
+						"ydiff": ydiff,
+						"zdiff": zdiff
+					}
+
 					if count % 3 == 0:
-						print("sending:", [x_rot, y_rot, z_rot, xdiff, ydiff, zdiff])
+						print("sending:", sendData)
 						count = 0
-					sendData = str([x_rot, y_rot, z_rot, xdiff, ydiff, zdiff])
-					mysocket.send(sendData.encode())
+					
+					# Serialize the dictionary to JSON and send it
+					mysocket.send(json.dumps(sendData).encode())
 				except:
 					pass
 
