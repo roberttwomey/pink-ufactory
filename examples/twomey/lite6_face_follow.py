@@ -137,7 +137,9 @@ if __name__ == "__main__":
 
     # starting point (joint angles)
     q_ref = np.array(
-        [ 0, 0, 0, 0, 0, 0 ]
+        # [ 0, 0, 0, 0, 0, 0 ]
+        # [ 0, 0.15, 0.26, 0, 0, 0 ]
+        [ 0, 0.98, 1.3, 0, -1.74, -1.57 ]
     )
 
     srdf_path = os.path.join(
@@ -195,16 +197,15 @@ if __name__ == "__main__":
     end_effector_target = end_effector_task.transform_target_to_world
     
     # Set position
-    end_effector_target.translation[0] = 0.3
+    end_effector_target.translation[0] = 0.374#0.3
     end_effector_target.translation[1] = 0.0#0.4
-    end_effector_target.translation[2] = 0.2
+    end_effector_target.translation[2] = 0.194#0.2
 
     while True:
         # Receive face coordinates
         if not rxconnected:
             wait_for_rx_connection()
-
-
+            
         try:
             data = rxconn.recv(1024)
             if data == b'':
@@ -230,11 +231,12 @@ if __name__ == "__main__":
 
                 if thistype == "face":
                     y, p, r, dx, dy, dz = thispayload
-                    weight = 0.1#0.3
+                    weight = 0.2
                     dx = weight * dx
                     dy = weight * dy
                     dz = weight * dz
-                    face_direction = [dx, dy, dz]
+                    # face_direction = [dx, dy, dz]
+                    face_direction = [dz, dx, dy] # coordinates are different in robot space
                 else:
                     face_direction = None
 
@@ -243,30 +245,49 @@ if __name__ == "__main__":
             rxconnected = False
 
         # Update end_effector_target based on face_direction
-        # face_direction = None
         if face_direction:
             dx, dy, dz = face_direction
-            end_effector_target.translation[0] += dx
-            end_effector_target.translation[1] += dy
-            end_effector_target.translation[2] += dz
 
-        # Compute direction from target to origin
-        target_pos = np.array(end_effector_target.translation)
-        look_dir = target_pos / np.linalg.norm(target_pos)  # Away from origin
+            # Current position of the end effector
+            current_pos = np.array(end_effector_target.translation)
 
-        # Choose an arbitrary "up" vector (e.g., world z-axis)
-        up = np.array([0, 0, 1])
+            # New position based on face direction
+            new_face_pos = current_pos + np.array([dx, dy, dz])
 
-        # Recompute a right-handed frame (rotation matrix)
-        right = np.cross(up, look_dir)
-        right /= np.linalg.norm(right)
-        new_up = np.cross(look_dir, right)
+            # Weighted combination of old and new positions
+            a = 0.9  # Weight for the current position
+            b = 1.0 - a  # Weight for the new position
+            weighted_pos = a * current_pos + b * new_face_pos
 
-        # Build rotation matrix
-        R = np.column_stack((right, new_up, look_dir))  # 3x3 rotation matrix
+            # Recenter the calculated pose to be 0.3m off the table
+            recentered_pos = np.array([weighted_pos[0], weighted_pos[1], weighted_pos[2] - 0.15]) # -0.3
+            # recentered_pos = np.array([weighted_pos[0], weighted_pos[1], weighted_pos[2]])
 
-        # Set rotation
-        end_effector_target.rotation = R
+            # Apply limits based on minimum and maximum range
+            min_range = 0.2  # Minimum distance
+            max_range = 0.7  # Maximum distance
+            distance = np.linalg.norm(recentered_pos)
+            if distance < min_range:
+                recentered_pos = recentered_pos / distance * min_range
+            elif distance > max_range:
+                recentered_pos = recentered_pos / distance * max_range
+
+            # Adjust back to the original height offset
+            final_pos = np.array([recentered_pos[0], recentered_pos[1], recentered_pos[2] + 0.15]) # 0.3
+
+            # Update the end effector target position
+            end_effector_target.translation[:] = final_pos
+
+            # Compute the target orientation based on the new position
+            look_dir = final_pos / np.linalg.norm(final_pos)  # Direction vector
+            up = np.array([0, 0, 1])  # Arbitrary "up" vector
+            right = np.cross(up, look_dir)
+            right /= np.linalg.norm(right)
+            new_up = np.cross(look_dir, right)
+
+            # Build the rotation matrix
+            R = np.column_stack((right, new_up, look_dir))  # 3x3 rotation matrix
+            end_effector_target.rotation = R
 
         # Update visualization frames
         viewer["end_effector_target"].set_transform(end_effector_target.np)

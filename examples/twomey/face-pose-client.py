@@ -23,6 +23,7 @@ if bSocket:
 	# mysocket.connect(('192.168.4.5',12346)) # easybake
 	mysocket.connect(('127.0.0.1',12347))
 
+# mysocket.send(json.dumps("go").encode())  # Send acknowledgment as JSON
 
 def close_socket(thissocket):
     try:
@@ -52,7 +53,7 @@ try:
 
 		start = time.time()
 
-		# image = cv2.cvtColor(cv2.flip(image, -1), cv2.COLOR_BGR2RGB)
+		image = cv2.rotate(image, cv2.ROTATE_90_COUNTERCLOCKWISE)
 		image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
 		# razer kyo pro

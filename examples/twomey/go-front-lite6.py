@@ -1,13 +1,23 @@
-import socket
+#!/usr/bin/env python3
+# Software License Agreement (BSD License)
+#
+# Copyright (c) 2022, UFACTORY, Inc.
+# All rights reserved.
+#
+# Author: Vinman <vinman.wen@ufactory.cc> <vinman.cub@gmail.com>
+
+"""
+# Notice
+#   1. Changes to this file on Studio will not be preserved
+#   2. The next conversion will overwrite the file with the same name
+"""
+import sys
 import math
 import time
-import sys
-import json  # Add import for JSON
-
-mysocket = socket.socket()
-mysocket.connect(('127.0.0.1', 12346))
-# mysocket.connect(('192.168.4.206',12345))
-
+import datetime
+import random
+import traceback
+import threading
 
 """
 # xArm-Python-SDK: https://github.com/xArm-Developer/xArm-Python-SDK
@@ -22,23 +32,29 @@ except:
 from xarm import version
 from xarm.wrapper import XArmAPI
 
+def pprint(*args, **kwargs):
+    try:
+        stack_tuple = traceback.extract_stack(limit=2)[0]
+        print('[{}][{}] {}'.format(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), stack_tuple[1], ' '.join(map(str, args))))
+    except:
+        print(*args, **kwargs)
+
+pprint('xArm-Python-SDK Version:{}'.format(version.__version__))
+
 arm = XArmAPI('192.168.4.16')
-arm.motion_enable(enable=True)
+arm.clean_warn()
+arm.clean_error()
+arm.motion_enable(True)
 arm.set_mode(0)
-arm.set_state(state=0)
-
-# arm.reset(wait=True)
-
-arm.set_mode(1)
 arm.set_state(0)
-time.sleep(0.1)
+time.sleep(1)
 
 variables = {}
 params = {'speed': 100, 'acc': 2000, 'angle_speed': 20, 'angle_acc': 500, 'events': {}, 'variables': variables, 'callback_in_thread': True, 'quit': False}
 
 
 # Register error/warn changed callback
-def error_warn_change_callback(data):#
+def error_warn_change_callback(data):
     if data and data['error_code'] != 0:
         params['quit'] = True
         pprint('err={}, quit'.format(data['error_code']))
@@ -72,72 +88,22 @@ def connect_changed_callback(data):
         arm.release_connect_changed_callback(error_warn_change_callback)
 arm.register_connect_changed_callback(connect_changed_callback)
 
+# Rotation
+if not params['quit']:
+    params['angle_acc'] = 1145
+if not params['quit']:
+    params['angle_speed'] = 80
+    # if params['quit']:
+    
+    if arm.error_code == 0 and not params['quit']:
+        # code = arm.set_servo_angle(angle=[0.0, 0, 0.0, 0.0, 0.0, 0.0, 0.0], speed=params['angle_speed'], mvacc=params['angle_acc'], wait=True, radius=-1.0)
+        # code = arm.set_servo_angle(angle=[0.0, 0.15, 0.26, 0.0, 0.0, 0.0, 0.0], speed=params['angle_speed'], mvacc=params['angle_acc'], wait=True, radius=-1.0)
+        code = arm.set_servo_angle(angle=[0.0, 56.2, 74, 0.0, 0.0, -100, -90.0], speed=params['angle_speed'], mvacc=params['angle_acc'], wait=True, radius=-1.0)
+        if code != 0:
+            params['quit'] = True
+            pprint('set_servo_angle, code={}'.format(code))
 
-def close_socket(thissocket):
-    try:
-        thissocket.shutdown(socket.SHUT_RDWR)
-        thissocket.close()
-        thissocket = None
-    except socket.error as e:
-        pass
-    print("socket is closed")
-
-
-def is_moving():
-    """Check if the robot is still moving."""    
-    while arm.get_is_moving():
-        time.sleep(0.1)
-
-def move_robot(joints):
-    arm.set_servo_angle(angle=joints, is_radian=True, wait=True)
-    # is_moving()  # Wait until movement is finished
-    while arm.get_is_moving():
-        time.sleep(0.1)
-        print(".", end="")
-        sys.stdout.flush()
-
-firstConnect = True
-
-try:
-    while True:
-        data = mysocket.recv(1024)
-        message = data.decode()
-        if message == "Done":
-            break
-        # print(message)
-        try:
-            joints = json.loads(message)  # Parse joint data as JSON
-        except json.JSONDecodeError:
-            print("Error decoding JSON:", message)
-            continue
-        
-        # print(joints)
-        joints_deg = [math.degrees(joint) for joint in joints]
-        
-        if firstConnect:
-            arm.set_mode(0)
-            arm.set_state(state=0)
-            print("moving to first position", joints)
-            move_robot(joints)
-            firstConnect = False
-            arm.set_mode(1)
-            arm.set_state(state=0)
-            mysocket.send(json.dumps("go").encode())  # Send acknowledgment as JSON
-        else:
-            try:
-                if arm.connected and arm.state != 4:
-                    arm.set_servo_angle_j(joints, is_radian=True)
-            except Exception as e:
-                print("Error:", e)
-                break       
-        # print("moved to", joints_deg)
-        
-except KeyboardInterrupt:
-    print("closing socket...")
-    close_socket(mysocket)
-
-print("Isaac Sim Connection Stopped")
-
+# release all event
 if hasattr(arm, 'release_count_changed_callback'):
     arm.release_count_changed_callback(count_changed_callback)
 arm.release_error_warn_changed_callback(state_changed_callback)
