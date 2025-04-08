@@ -21,7 +21,7 @@ if bSocket:
 	# open socket to omniverse machine
 	mysocket = socket.socket()
 	# mysocket.connect(('192.168.4.5',12346)) # easybake
-	mysocket.connect(('127.0.0.1',12346))
+	mysocket.connect(('127.0.0.1',12347))
 
 
 def close_socket(thissocket):
@@ -179,24 +179,20 @@ try:
 			if bSocket:
 				try:
 					count += 1
-					# Prepare data as a dictionary
+					# Prepare data as a dictionary with type and payload
 					sendData = {
-						"x_rot": x_rot,
-						"y_rot": y_rot,
-						"z_rot": z_rot,
-						"xdiff": xdiff,
-						"ydiff": ydiff,
-						"zdiff": zdiff
+						"type": "face",
+						"payload": [x_rot, y_rot, z_rot, xdiff, ydiff, zdiff]
 					}
 
-					if count % 3 == 0:
+					if count % 10 == 0:
 						print("sending:", sendData)
 						count = 0
-					
+
 					# Serialize the dictionary to JSON and send it
 					mysocket.send(json.dumps(sendData).encode())
-				except:
-					pass
+				except Exception as e:
+					print("Error sending data:", e)
 
 		cv2.imshow('Head Pose Estimation', image)
 
