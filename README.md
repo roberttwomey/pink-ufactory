@@ -14,7 +14,13 @@
 ### Installation on Mac OS
 Fresh install on MacOS sonomoa (14.7.2) with homebrew and conda installed.
 
-1. Create a new conda environment:
+0. Install git with homebrew
+```console
+brew install git
+```
+(prompts you to install xcode developer tools)
+
+2. Create a new conda environment:
    
 ```console
 conda create -n pink python==3.12
