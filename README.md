@@ -11,7 +11,31 @@
 ![Banner for Pink v0.5.0](https://user-images.githubusercontent.com/1189580/192318997-ed7574c3-8238-451d-9548-a769d46ec03b.png)
 
 ## Installation
+### Installation on Mac OS
+Fresh install on MacOS sonomoa (14.7.2) with homebrew and conda installed.
 
+0. Install git with homebrew
+```console
+brew install git
+```
+(prompts you to install xcode developer tools)
+
+2. Create a new conda environment:
+   
+```console
+conda create -n pink python==3.12
+conda activate pink
+```
+
+2. Install prereqs and pink
+```console
+brew install zmq
+pip install meshcat
+conda install -c conda-forge pink
+```
+3. Try it out. 
+
+### Default Installation
 For best performance we recommended installing Pink from Conda:
 
 ```console
