@@ -127,7 +127,7 @@ if __name__ == "__main__":
 
     end_effector_task = FrameTask(
         "link_eef",
-        position_cost=30.0, #10.0,  # [cost] / [m]
+        position_cost=40.0, #10.0, #30.0 #10.0,  # [cost] / [m]
         orientation_cost=1.0,  # [cost] / [rad]
     )
 
@@ -260,12 +260,12 @@ if __name__ == "__main__":
             weighted_pos = a * current_pos + b * new_face_pos
 
             # Recenter the calculated pose to be 0.3m off the table
-            recentered_pos = np.array([weighted_pos[0], weighted_pos[1], weighted_pos[2] - 0.15]) # -0.3
+            recentered_pos = np.array([weighted_pos[0], weighted_pos[1], weighted_pos[2] - 0.2])
             # recentered_pos = np.array([weighted_pos[0], weighted_pos[1], weighted_pos[2]])
 
             # Apply limits based on minimum and maximum range
             min_range = 0.2  # Minimum distance
-            max_range = 0.7  # Maximum distance
+            max_range = 0.6 #0.7  # Maximum distance
             distance = np.linalg.norm(recentered_pos)
             if distance < min_range:
                 recentered_pos = recentered_pos / distance * min_range
@@ -273,10 +273,7 @@ if __name__ == "__main__":
                 recentered_pos = recentered_pos / distance * max_range
 
             # Adjust back to the original height offset
-            final_pos = np.array([recentered_pos[0], recentered_pos[1], recentered_pos[2] + 0.15]) # 0.3
-
-            # Update the end effector target position
-            end_effector_target.translation[:] = final_pos
+            final_pos = np.array([recentered_pos[0], recentered_pos[1], recentered_pos[2]])
 
             # Compute the target orientation based on the new position
             look_dir = final_pos / np.linalg.norm(final_pos)  # Direction vector
@@ -288,6 +285,13 @@ if __name__ == "__main__":
             # Build the rotation matrix
             R = np.column_stack((right, new_up, look_dir))  # 3x3 rotation matrix
             end_effector_target.rotation = R
+
+            # Ensure the z height is above 0.2
+            final_pos[2] = max(final_pos[2]+0.2, 0.2)
+            # final_pos[2] = max(final_pos[2], 0.2)
+
+            # Update the end effector target position
+            end_effector_target.translation[:] = final_pos
 
         # Update visualization frames
         viewer["end_effector_target"].set_transform(end_effector_target.np)

@@ -157,7 +157,9 @@ try:
 				xdiff = 0.5-nose_norm[0]
 				ydiff = 0.5-nose_norm[1]
 				# zdist = 0.030 - ((400.0 + nose_3d[2])/10000.0) # arbitrary offset
-				zdiff = nose_3d[2]/10000.0 + 0.01
+				# zdiff = nose_3d[2]/10000.0 + 0.01
+				# zdiff = nose_3d[2]/10000.0 + 0.02
+				zdiff = (nose_3d[2]/10000.0 + 0.03) * 10.0
 				cv2.putText(image, "xdiff: "+str(np.round(xdiff, 3)), (500, 200), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 2)
 				cv2.putText(image, "ydiff: "+str(np.round(ydiff, 3)), (500, 250), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 2)
 				cv2.putText(image, "zdiff: "+str(np.round(zdiff, 3)), (500, 300), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 2)

@@ -98,7 +98,8 @@ if not params['quit']:
     if arm.error_code == 0 and not params['quit']:
         # code = arm.set_servo_angle(angle=[0.0, 0, 0.0, 0.0, 0.0, 0.0, 0.0], speed=params['angle_speed'], mvacc=params['angle_acc'], wait=True, radius=-1.0)
         # code = arm.set_servo_angle(angle=[0.0, 0.15, 0.26, 0.0, 0.0, 0.0, 0.0], speed=params['angle_speed'], mvacc=params['angle_acc'], wait=True, radius=-1.0)
-        code = arm.set_servo_angle(angle=[0.0, 56.2, 74, 0.0, 0.0, -100, -90.0], speed=params['angle_speed'], mvacc=params['angle_acc'], wait=True, radius=-1.0)
+        code = arm.set_servo_angle(angle=[0.0, 56.2, 74, 0.0, -100, -90.0], speed=params['angle_speed'], mvacc=params['angle_acc'], wait=True, radius=-1.0)
+        # code = arm.set_servo_angle(angle=[0.0, 56.2, 74, 0.0, -84.7, -90.0], speed=params['angle_speed'], mvacc=params['angle_acc'], wait=True, radius=-1.0)
         if code != 0:
             params['quit'] = True
             pprint('set_servo_angle, code={}'.format(code))
